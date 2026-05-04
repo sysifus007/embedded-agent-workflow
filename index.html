@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Embedded Agent Workflow — 在线演示</title>
+<style>
+  :root{--bg:#0d1117;--fg:#c9d1d9;--accent:#58a6ff;--ok:#3fb950;--warn:#d29922;--err:#f85149;--muted:#8b949e;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;background:var(--bg);color:var(--fg);line-height:1.6;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem}
+  h1{font-size:1.6rem;margin-bottom:.5rem;color:#fff}
+  .subtitle{color:var(--muted);font-size:.9rem;margin-bottom:2rem}
+  .container{width:100%;max-width:800px}
+  .panel{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1.2rem;margin-bottom:1rem}
+  .panel h2{font-size:1rem;color:var(--accent);margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem}
+  .panel h2::before{content:"▸";color:var(--accent)}
+  .agent{display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;background:#0d1117;border-radius:6px;margin:.4rem 0;border-left:3px solid var(--accent)}
+  .agent.ok{border-left-color:var(--ok)}
+  .agent.warn{border-left-color:var(--warn)}
+  .agent .name{font-weight:600;min-width:110px}
+  .agent .status{font-size:.85rem;color:var(--muted)}
+  .agent .badge{font-size:.75rem;padding:.15rem .5rem;border-radius:12px;background:#238636;color:#fff}
+  .log{background:#0d1117;border-radius:6px;padding:.8rem;font-size:.85rem;color:var(--muted);height:220px;overflow-y:auto;white-space:pre-wrap;border:1px solid #30363d}
+  .log .line{margin:.15rem 0}
+  .log .time{color:#484f58}
+  .log .info{color:var(--accent)}
+  .log .ok{color:var(--ok)}
+  .log .err{color:var(--err)}
+  .btn{background:var(--accent);color:#fff;border:none;padding:.6rem 1.2rem;border-radius:6px;cursor:pointer;font-size:.9rem;font-family:inherit;margin-top:.5rem}
+  .btn:hover{background:#79c0ff}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.8rem;margin-top:.8rem}
+  .stat{text-align:center;padding:.6rem;background:#0d1117;border-radius:6px}
+  .stat .num{font-size:1.4rem;font-weight:700;color:var(--accent)}
+  .stat .label{font-size:.75rem;color:var(--muted)}
+  .hidden{display:none}
+  .blink{animation:blink 1s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  footer{margin-top:2rem;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+
+<h1>🔧 Embedded Agent Workflow</h1>
+<div class="subtitle">多 Agent 自主协作嵌入式开发流水线 — 在线演示</div>
+
+<div class="container">
+
+  <!-- Agent Status -->
+  <div class="panel">
+    <h2>Agent 状态监控</h2>
+    <div class="agent" id="ag-driver">
+      <span class="name">DriverGen</span>
+      <span class="status">等待触发...</span>
+      <span class="badge hidden">DONE</span>
+    </div>
+    <div class="agent" id="ag-shell">
+      <span class="name">ShellGen</span>
+      <span class="status">等待依赖...</span>
+      <span class="badge hidden">DONE</span>
+    </div>
+    <div class="agent" id="ag-test">
+      <span class="name">TestGen</span>
+      <span class="status">等待依赖...</span>
+      <span class="badge hidden">DONE</span>
+    </div>
+    <div class="agent" id="ag-orch">
+      <span class="name">Orchestrator</span>
+      <span class="status">待机中</span>
+      <span class="badge hidden">DONE</span>
+    </div>
+  </div>
+
+  <!-- Control -->
+  <div class="panel">
+    <h2>运行控制</h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:.8rem">
+      点击按钮模拟完整的多 Agent 协作流水线：从 datasheet 解析 → 驱动生成 → CLI 构建 → HIL 测试 → 质量门禁判定。
+    </p>
+    <button class="btn" id="runBtn" onclick="runPipeline()">▶ 启动 Agent 流水线</button>
+  </div>
+
+  <!-- Live Log -->
+  <div class="panel">
+    <h2>执行日志</h2>
+    <div class="log" id="logBox">等待启动...</div>
+  </div>
+
+  <!-- Test Report -->
+  <div class="panel hidden" id="reportPanel">
+    <h2>TestGen 测试报告</h2>
+    <div class="stats">
+      <div class="stat"><div class="num" id="r-total">0</div><div class="label">总指令数</div></div>
+      <div class="stat"><div class="num" id="r-pass">0</div><div class="label">通过</div></div>
+      <div class="stat"><div class="num" id="r-fail">0</div><div class="label">失败</div></div>
+      <div class="stat"><div class="num" id="r-time">0ms</div><div class="label">平均响应</div></div>
+    </div>
+    <div style="margin-top:1rem;font-size:.85rem;color:var(--muted)" id="reportDetail"></div>
+  </div>
+
+</div>
+
+<footer>
+  GitHub: <a href="https://github.com/YOUR_NAME/embedded-agent-workflow" style="color:var(--accent)">embedded-agent-workflow</a> |
+  Built with autonomous agents
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function log(cls, text) {
+  const t = new Date().toLocaleTimeString('zh-CN',{hour12:false});
+  const line = document.createElement('div');
+  line.className = 'line';
+  line.innerHTML = `<span class="time">[${t}]</span> <span class="${cls}">${text}</span>`;
+  $('logBox').appendChild(line);
+  $('logBox').scrollTop = $('logBox').scrollHeight;
+}
+
+function setAgent(id, status, done=false) {
+  const el = $(id);
+  el.querySelector('.status').textContent = status;
+  const badge = el.querySelector('.badge');
+  badge.classList.toggle('hidden', !done);
+  el.classList.toggle('ok', done);
+}
+
+async function runPipeline() {
+  $('runBtn').disabled = true;
+  $('logBox').innerHTML = '';
+  $('reportPanel').classList.add('hidden');
+  ['ag-driver','ag-shell','ag-test','ag-orch'].forEach(id => setAgent(id, '等待触发...', false));
+
+  // Orchestrator starts
+  setAgent('ag-orch', '调度中...');
+  log('info', 'Orchestrator: 检测到新 commit，启动流水线');
+  await sleep(600);
+
+  // DriverGen
+  setAgent('ag-driver', '解析 datasheet...');
+  log('info', 'DriverGen: 加载 SHT30 datasheet (I2C, 0x44)...');
+  await sleep(800);
+  log('info', 'DriverGen: 生成 sht30.c / sht30.h');
+  await sleep(600);
+  log('info', 'DriverGen: 静态分析 — 寄存器地址校验通过');
+  await sleep(500);
+  log('ok', 'DriverGen: 驱动生成完成，发布 v2 元数据');
+  setAgent('ag-driver', '驱动已发布', true);
+  await sleep(400);
+
+  // ShellGen
+  setAgent('ag-shell', '查询 DriverGen API...');
+  log('info', 'ShellGen: 读取 sht30.v2.json，发现 API: sht30_read()');
+  await sleep(600);
+  log('info', 'ShellGen: 解析自然语言 spec: "led on/off; read_temp; oled_clear"');
+  await sleep(700);
+  log('info', 'ShellGen: 生成命令表 cmd_t[4]，参数校验器 3 个');
+  await sleep(500);
+  log('ok', 'ShellGen: CLI 构建完成，接口与驱动零摩擦对接');
+  setAgent('ag-shell', 'CLI 已构建', true);
+  await sleep(400);
+
+  // TestGen
+  setAgent('ag-test', '推理测试策略...');
+  log('info', 'TestGen: 符号执行命令语法，推导输入空间');
+  await sleep(700);
+  log('info', 'TestGen: 生成 100 组用例 (边界 32 + 对抗 28 + 状态 40)');
+  await sleep(600);
+  log('info', 'TestGen: 通过 UART 向 STM32 下发指令...');
+  await sleep(800);
+  log('ok', 'TestGen: 98/100 通过，2 例失败已溯源');
+  setAgent('ag-test', '测试完成', true);
+  await sleep(400);
+
+  // Orchestrator gate
+  setAgent('ag-orch', '质量门禁判定...');
+  log('info', 'Orchestrator: 汇总 DriverGen + ShellGen + TestGen 结果');
+  await sleep(500);
+  log('info', 'Orchestrator: 失败率 2% < 阈值 5%，判定通过');
+  await sleep(400);
+  log('ok', 'Orchestrator: 流水线完成，标记 commit 为 agent-verified ✅');
+  setAgent('ag-orch', '全部通过', true);
+
+  // Show report
+  $('reportPanel').classList.remove('hidden');
+  $('r-total').textContent = '100';
+  $('r-pass').textContent = '98';
+  $('r-fail').textContent = '2';
+  $('r-time').textContent = '3.2ms';
+  $('reportDetail').innerHTML = `
+    <b>失败分析：</b><br>
+    • CMD #47: <code>oled</code> 64 字符 payload → buffer overflow，溯源至 <code>ssd1306_draw_string()</code> L112<br>
+    • CMD #88: <code>read_temp</code> I2C bus contention → NACK 恢复成功，溯源至 <code>sht30_read()</code> L78
+  `;
+
+  $('runBtn').disabled = false;
+  $('runBtn').textContent = '↻ 再次运行';
+}
+</script>
+
+</body>
+</html>
