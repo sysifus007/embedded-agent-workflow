@@ -2,7 +2,7 @@
 
 > 多 Agent 自主协作的嵌入式开发流水线演示
 
-**在线演示**: [https://YOUR_NAME.github.io/embedded-agent-workflow](https://YOUR_NAME.github.io/embedded-agent-workflow)
+**在线演示**: [https://sysiphus007.github.io/embedded-agent-workflow](https://sysiphus007.github.io/embedded-agent-workflow)
 
 ---
 
