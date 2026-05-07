@@ -1,8 +1,9 @@
 # Embedded Agent Workflow
 
-> 多 Agent 自主协作的嵌入式开发流水线演示
+> 🤖 多 Agent 自主协作的嵌入式开发流水线演示
 
-**在线演示**: [https://YOUR_NAME.github.io/embedded-agent-workflow](https://YOUR_NAME.github.io/embedded-agent-workflow)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-blue)](https://sysifus007.github.io/embedded-agent-workflow)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
@@ -36,7 +37,7 @@
 ## Agent 自主能力
 
 | Agent | 自主行为 |
-|-------|---------|
+|-------|----------|
 | **DriverGen** | 解析 datasheet，生成寄存器驱动，**自我静态分析并修正** |
 | **ShellGen** | **主动查询** DriverGen 的 API 签名，自动对接回调函数 |
 | **TestGen** | **不依赖手写用例**，符号执行推导输入空间，失败时**自主溯源至源码行号** |
@@ -44,7 +45,7 @@
 
 ## 快速体验
 
-1. 打开 [在线演示](https://YOUR_NAME.github.io/embedded-agent-workflow)
+1. 打开 [在线演示](https://sysifus007.github.io/embedded-agent-workflow)
 2. 点击 **"启动 Agent 流水线"**
 3. 观看 4 个 Agent 的实时协作日志与最终测试报告
 
@@ -64,13 +65,6 @@ embedded-agent-workflow/
     └── workflows/
         └── pages.yml   # GitHub Pages 自动部署
 ```
-
-## 部署到 GitHub Pages
-
-1. Fork 本仓库
-2. 进入 **Settings → Pages**
-3. Source 选择 **Deploy from a branch → main / root**
-4. 访问 `https://YOUR_NAME.github.io/embedded-agent-workflow`
 
 ## License
 
